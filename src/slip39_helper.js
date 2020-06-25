@@ -1,11 +1,5 @@
 /* eslint-disable no-array-constructor */
-let crypto;
-try {
-  crypto = require('crypto');
-} catch (err) {
-  throw new Error('crypto support must be enabled');
-}
-
+const crypto = require('./slip39_crypto.js');
 
 // The length of the radix in bits.
 const RADIX_BITS = 10;
