@@ -61,21 +61,29 @@ const SECRET_INDEX = 255;
 //
 // Helper functions for SLIP39 implementation.
 //
-String.prototype.slip39EncodeHex = function () {
+function slip39EncodeHex(plain) {
   let bytes = [];
-  for (let i = 0; i < this.length; ++i) {
-    bytes.push(this.charCodeAt(i));
+  for (let i = 0; i < plain.length; ++i) {
+    bytes.push(plain.charCodeAt(i));
   }
   return bytes;
+}
+
+String.prototype.slip39EncodeHex = function () {
+  return slip39EncodeHex(this)
 };
 
-Array.prototype.slip39DecodeHex = function () {
+function slip39DecodeHex(encoded) {
   let str = [];
-  const hex = this.toString().split(',');
+  const hex = encoded.toString().split(',');
   for (let i = 0; i < hex.length; i++) {
     str.push(String.fromCharCode(hex[i]));
   }
   return str.toString().replace(/,/g, '');
+}
+
+Array.prototype.slip39DecodeHex = function () {
+  return slip39DecodeHex(this)
 };
 
 Array.prototype.slip39Generate = function (m, v = _ => _) {
@@ -2238,5 +2246,7 @@ exports = module.exports = {
   splitSecret,
   combineMnemonics,
   crypt,
-  bitsToBytes
+  bitsToBytes,
+  slip39EncodeHex,
+  slip39DecodeHex,
 };
