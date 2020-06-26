@@ -186,7 +186,6 @@ async function crypt(masterSecret, passphrase, iterationExponent,
   let range = Array().slip39Generate(ROUND_COUNT);
   range = encrypt ? range : range.reverse();
 
-  //range.forEach((round) => {
   for (const round of range) {
     const f = await roundFunction(round, pwd, iterationExponent, salt, IR);
     const t = xor(IL, f);
@@ -196,16 +195,6 @@ async function crypt(masterSecret, passphrase, iterationExponent,
 
   return IR.concat(IL);
 }
-
-// function createDigest(randomData, sharedSecret) {
-//   const hmac = crypto.createHmac('sha256', Buffer.from(randomData));
-
-//   hmac.update(Buffer.from(sharedSecret));
-
-//   let result = hmac.digest();
-//   result = result.slice(0, 4);
-//   return Array.prototype.slice.call(result, 0);
-// }
 
 function splitSecret(threshold, shareCount, sharedSecret) {
   if (threshold <= 0) {

@@ -9,17 +9,8 @@ const ONE_GROUP = [
 ];
 
 let slip15;
-// const slip15 = await slip39.fromArray(MS, {
-//   passphrase: PASSPHRASE,
-//   threshold: 1,
-//   groups: ONE_GROUP
-// });
 
 let slip15NoPW;
-// const slip15NoPW = await slip39.fromArray(MS, {
-//   threshold: 1,
-//   groups: ONE_GROUP
-// });
 
 //
 // Shuffle
@@ -57,7 +48,6 @@ function getCombinations(array, k) {
 describe('Basic Tests', () => {
   describe('Test threshold 1 with 5 of 7 shares of a group combinations', () => {
     let mnemonics = [];
-    // let mnemonics = slip15.fromPath('r/0').mnemonics;
 
     let combinations = getCombinations([0, 1, 2, 3, 4, 5, 6], 5);
     combinations.forEach((item) => {
@@ -84,9 +74,7 @@ describe('Basic Tests', () => {
 
   describe('Test passhrase', () => {
     let mnemonics = [];
-    // let mnemonics = slip15.fromPath('r/0').mnemonics;
     let nopwMnemonics = [];
-    // let nopwMnemonics = slip15NoPW.fromPath('r/0').mnemonics;
 
     before(async () => {
       slip15 = await slip39.fromArray(MS, {
@@ -119,14 +107,8 @@ describe('Basic Tests', () => {
 
   describe('Test iteration exponent', () => {
     let slip1;
-    // const slip1 = slip39.fromArray(MS, {
-    //   iterationExponent: 1
-    // });
 
     let slip2;
-    // const slip2 = slip39.fromArray(MS, {
-    //   iterationExponent: 2
-    // });
 
     beforeEach(async () => {
       slip1 = await slip39.fromArray(MS, {
@@ -181,16 +163,8 @@ describe('Group Sharing Tests', () => {
       [1, 1, 'Group 3']
     ];
     let slip;
-    // const slip = slip39.fromArray(MS, {
-    //   threshold: 2,
-    //   groups: groups,
-    //   title: 'Trezor one SSSS'
-    // });
-
     let group2Mnemonics = [];
-    // const group2Mnemonics = slip.fromPath('r/2').mnemonics;
     let group3Mnemonic = [];
-    // const group3Mnemonic = slip.fromPath('r/3').mnemonics[0];
 
     before(async () => {
       slip = await slip39.fromArray(MS, {
