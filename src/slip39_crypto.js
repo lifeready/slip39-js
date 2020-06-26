@@ -15,43 +15,77 @@ try {
 if (crypto_web) {
   console.log("Using Web Crypto")
 
-  var randomBytes = function (size/*, callback*/) {
+  var randomBytes = function (size) {
 
     var array = new Uint8Array(size)
     crypto_web.getRandomValues(array);
 
-    console.log(`Generated ${size} random bytes: ${array}`)
-
     return array;
   }
 
-  var pbkdf2Sync = function (password, salt, iterations, keylen, digest) {
-    var derived = null;
+  var pbkdf2Sync = async function (password, salt, iterations, keylen, digest) {
+
+    let hash;
+    if (digest == "sha256") {
+      hash = "SHA-256";
+    }
+
+    let keyMaterial = await crypto_web.subtle.importKey(
+      "raw",        // format
+      password,     // keyData
+      "PBKDF2",     // algorithm
+      false,        // extractable
+      ["deriveKey"] // usages
+    );
+
+    let key = await crypto_web.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: iterations,
+        hash: hash,
+      },                      // algorithm
+      keyMaterial,            // baseKey
+      {
+        name: "HMAC",
+        hash: hash,
+        length: keylen * 8 // keylen is in bytes, we need bits here
+      },                      // derivedKeyAlgorithm
+      true,                   // extractable
+      ["sign"]                // keyUsages
+    );
+
+    let derived = await crypto.subtle.exportKey("raw", key);
+    derived = new Uint8Array(derived);
+
     return derived;
   }
 
-  var createDigest = function (randomData, sharedSecret) {
+  var createDigest = async function (randomData, sharedSecret) {
 
-    const key = crypto_web.subtle.importKey(
-      "raw", //format,
-      Buffer.from(randomData), //keyData,
+    const key = await crypto_web.subtle.importKey(
+      "raw",                    //format,
+      Buffer.from(randomData),  //keyData,
       {
         name: "HMAC",
         hash: "SHA-256"
-      }, //algorithm,
-      true, //extractable,
-      ["sign", "verify"], //usages
+      },                        //algorithm,
+      true,                     //extractable,
+      ["sign"],                 //usages
     );
 
     const data = Buffer.from(sharedSecret);
 
-    let result = crypto_web.subtle.sign("HMAC", key, data);
+    let result = await crypto_web.subtle.sign("HMAC", key, data);
+    result = new Uint8Array(result);
 
     result = result.slice(0, 4);
-    return Array.prototype.slice.call(result, 0);
+    result = Array.prototype.slice.call(result, 0);
+    return result;
   }
-} else if (crypto_node) {
-  console.log("Using Node crypto")
+} // ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ====
+else if (crypto_node) {
+  console.log("Using Node.js crypto")
 
   var randomBytes = function (size) {
     var array = crypto_node.randomBytes(size)
@@ -72,7 +106,8 @@ if (crypto_web) {
     let result = hmac.digest();
 
     result = result.slice(0, 4);
-    return Array.prototype.slice.call(result, 0);
+    result = Array.prototype.slice.call(result, 0);
+    return result;
   }
 }
 
