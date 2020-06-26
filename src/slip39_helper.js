@@ -159,16 +159,16 @@ function randomBytes(length = 32) {
 //
 // The round function used internally by the Feistel cipher.
 //
-function roundFunction(round, passphrase, exp, salt, secret) {
+async function roundFunction(round, passphrase, exp, salt, secret) {
   const saltedSecret = salt.concat(secret);
   const roundedPhrase = [round].concat(passphrase);
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
 
-  const key = crypto.pbkdf2Sync(Buffer.from(roundedPhrase), Buffer.from(saltedSecret), count, secret.length, 'sha256');
+  const key = await crypto.pbkdf2Sync(Buffer.from(roundedPhrase), Buffer.from(saltedSecret), count, secret.length, 'sha256');
   return Array.prototype.slice.call(key, 0);
 }
 
-function crypt(masterSecret, passphrase, iterationExponent,
+async function crypt(masterSecret, passphrase, iterationExponent,
   identifier,
   encrypt = true) {
   // Iteration exponent validated here.
@@ -186,24 +186,26 @@ function crypt(masterSecret, passphrase, iterationExponent,
   let range = Array().slip39Generate(ROUND_COUNT);
   range = encrypt ? range : range.reverse();
 
-  range.forEach((round) => {
-    const f = roundFunction(round, pwd, iterationExponent, salt, IR);
+  //range.forEach((round) => {
+  for (const round of range) {
+    const f = await roundFunction(round, pwd, iterationExponent, salt, IR);
     const t = xor(IL, f);
     IL = IR;
     IR = t;
-  });
+  }
+
   return IR.concat(IL);
 }
 
-function createDigest(randomData, sharedSecret) {
-  const hmac = crypto.createHmac('sha256', Buffer.from(randomData));
+// function createDigest(randomData, sharedSecret) {
+//   const hmac = crypto.createHmac('sha256', Buffer.from(randomData));
 
-  hmac.update(Buffer.from(sharedSecret));
+//   hmac.update(Buffer.from(sharedSecret));
 
-  let result = hmac.digest();
-  result = result.slice(0, 4);
-  return Array.prototype.slice.call(result, 0);
-}
+//   let result = hmac.digest();
+//   result = result.slice(0, 4);
+//   return Array.prototype.slice.call(result, 0);
+// }
 
 function splitSecret(threshold, shareCount, sharedSecret) {
   if (threshold <= 0) {
@@ -225,7 +227,7 @@ function splitSecret(threshold, shareCount, sharedSecret) {
   const randomShareCount = threshold - 2;
 
   const randomPart = randomBytes(sharedSecret.length - DIGEST_LENGTH);
-  const digest = createDigest(randomPart, sharedSecret);
+  const digest = crypto.createDigest(randomPart, sharedSecret);
 
   let baseShares = new Map();
   let shares = [];
@@ -424,7 +426,7 @@ function recoverSecret(threshold, shares) {
   const digest = digestShare.slice(0, DIGEST_LENGTH);
   const randomPart = digestShare.slice(DIGEST_LENGTH);
 
-  const recoveredDigest = createDigest(
+  const recoveredDigest = crypto.createDigest(
     randomPart, sharedSecret);
   if (!listsAreEqual(digest, recoveredDigest)) {
     throw new Error('Invalid digest of the shared secret.');
@@ -436,7 +438,7 @@ function recoverSecret(threshold, shares) {
 // Combines mnemonic shares to obtain the master secret which was previously
 // split using Shamir's secret sharing scheme.
 //
-function combineMnemonics(mnemonics, passphrase = '') {
+async function combineMnemonics(mnemonics, passphrase = '') {
   if (mnemonics === null || mnemonics.length === 0) {
     throw new Error('The list of mnemonics is empty.');
   }
@@ -477,7 +479,7 @@ function combineMnemonics(mnemonics, passphrase = '') {
 
   const ems = recoverSecret(groupThreshold, allShares);
   const id = intToIndices(BigInt(identifier), ITERATION_EXP_WORDS_LENGTH, 8);
-  const ms = crypt(ems, passphrase, iterationExponent, id, false);
+  const ms = await crypt(ems, passphrase, iterationExponent, id, false);
 
   return ms;
 }

@@ -44,7 +44,7 @@ class Slip39 {
     this.groupThreshold = groupThreshold;
   }
 
-  static fromArray(masterSecret, {
+  static async fromArray(masterSecret, {
     passphrase = '',
     threshold = 1,
     groups = [
@@ -84,7 +84,7 @@ class Slip39 {
       groupThreshold: threshold
     });
 
-    const encryptedMasterSecret = slipHelper.crypt(
+    const encryptedMasterSecret = await slipHelper.crypt(
       masterSecret, passphrase, iterationExponent, slip.identifier);
 
     const root = slip.buildRecursive(
@@ -138,8 +138,8 @@ class Slip39 {
     return currentNode;
   }
 
-  static recoverSecret(mnemonics, passphrase) {
-    return slipHelper.combineMnemonics(mnemonics, passphrase);
+  static async recoverSecret(mnemonics, passphrase) {
+    return await slipHelper.combineMnemonics(mnemonics, passphrase);
   }
 
   static validateMnemonic(mnemonic) {

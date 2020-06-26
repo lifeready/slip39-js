@@ -8,16 +8,18 @@ const ONE_GROUP = [
   [5, 7]
 ];
 
-const slip15 = slip39.fromArray(MS, {
-  passphrase: PASSPHRASE,
-  threshold: 1,
-  groups: ONE_GROUP
-});
+let slip15;
+// const slip15 = await slip39.fromArray(MS, {
+//   passphrase: PASSPHRASE,
+//   threshold: 1,
+//   groups: ONE_GROUP
+// });
 
-const slip15NoPW = slip39.fromArray(MS, {
-  threshold: 1,
-  groups: ONE_GROUP
-});
+let slip15NoPW;
+// const slip15NoPW = await slip39.fromArray(MS, {
+//   threshold: 1,
+//   groups: ONE_GROUP
+// });
 
 //
 // Shuffle
@@ -54,52 +56,94 @@ function getCombinations(array, k) {
 
 describe('Basic Tests', () => {
   describe('Test threshold 1 with 5 of 7 shares of a group combinations', () => {
-    let mnemonics = slip15.fromPath('r/0').mnemonics;
+    let mnemonics = [];
+    // let mnemonics = slip15.fromPath('r/0').mnemonics;
 
     let combinations = getCombinations([0, 1, 2, 3, 4, 5, 6], 5);
     combinations.forEach((item) => {
       shuffle(item);
       let description = `Test shuffled combination ${item.join(' ')}.`;
-      it(description, () => {
+
+      before(async () => {
+        slip15 = await slip39.fromArray(MS, {
+          passphrase: PASSPHRASE,
+          threshold: 1,
+          groups: ONE_GROUP
+        });
+
+        mnemonics = slip15.fromPath('r/0').mnemonics;
+      });
+
+      it(description, async () => {
         let shares = item.map((idx) => mnemonics[idx]);
-        assert(MS.slip39DecodeHex() === slip39.recoverSecret(shares, PASSPHRASE)
+        assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(shares, PASSPHRASE))
           .slip39DecodeHex());
       });
     });
   });
 
   describe('Test passhrase', () => {
-    let mnemonics = slip15.fromPath('r/0').mnemonics;
-    let nopwMnemonics = slip15NoPW.fromPath('r/0').mnemonics;
+    let mnemonics = [];
+    // let mnemonics = slip15.fromPath('r/0').mnemonics;
+    let nopwMnemonics = [];
+    // let nopwMnemonics = slip15NoPW.fromPath('r/0').mnemonics;
 
-    it('should return valid mastersecret when user submits valid passphrase', () => {
-      assert(MS.slip39DecodeHex() === slip39.recoverSecret(mnemonics.slice(0, 5), PASSPHRASE)
+    before(async () => {
+      slip15 = await slip39.fromArray(MS, {
+        passphrase: PASSPHRASE,
+        threshold: 1,
+        groups: ONE_GROUP
+      });
+      mnemonics = slip15.fromPath('r/0').mnemonics;
+
+      slip15NoPW = await slip39.fromArray(MS, {
+        threshold: 1,
+        groups: ONE_GROUP
+      });
+      nopwMnemonics = slip15NoPW.fromPath('r/0').mnemonics;
+    });
+
+    it('should return valid mastersecret when user submits valid passphrase', async () => {
+      assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(mnemonics.slice(0, 5), PASSPHRASE))
         .slip39DecodeHex());
     });
-    it('should NOT return valid mastersecret when user submits invalid passphrse', () => {
-      assert(MS.slip39DecodeHex() !== slip39.recoverSecret(mnemonics.slice(0, 5))
+    it('should NOT return valid mastersecret when user submits invalid passphrse', async () => {
+      assert(MS.slip39DecodeHex() !== (await slip39.recoverSecret(mnemonics.slice(0, 5)))
         .slip39DecodeHex());
     });
-    it('should return valid mastersecret when user does not submit passphrase', () => {
-      assert(MS.slip39DecodeHex() === slip39.recoverSecret(nopwMnemonics.slice(0, 5))
+    it('should return valid mastersecret when user does not submit passphrase', async () => {
+      assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(nopwMnemonics.slice(0, 5)))
         .slip39DecodeHex());
     });
   });
 
   describe('Test iteration exponent', () => {
-    const slip1 = slip39.fromArray(MS, {
-      iterationExponent: 1
+    let slip1;
+    // const slip1 = slip39.fromArray(MS, {
+    //   iterationExponent: 1
+    // });
+
+    let slip2;
+    // const slip2 = slip39.fromArray(MS, {
+    //   iterationExponent: 2
+    // });
+
+    beforeEach(async () => {
+      slip1 = await slip39.fromArray(MS, {
+        iterationExponent: 1
+      });
+
+      slip2 = await slip39.fromArray(MS, {
+        iterationExponent: 2
+      });
     });
 
-    const slip2 = slip39.fromArray(MS, {
-      iterationExponent: 2
-    });
 
-    it('should return valid mastersecret when user apply valid iteration exponent', () => {
-      assert(MS.slip39DecodeHex() === slip39.recoverSecret(slip1.fromPath('r/0').mnemonics)
+    it('should return valid mastersecret when user apply valid iteration exponent', async () => {
+      assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(slip1.fromPath('r/0').mnemonics))
         .slip39DecodeHex());
 
-      assert(MS.slip39DecodeHex() === slip39.recoverSecret(slip2.fromPath('r/0').mnemonics)
+      assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(slip2.fromPath('r/0').mnemonics))
         .slip39DecodeHex());
     });
     /**
@@ -112,13 +156,17 @@ describe('Basic Tests', () => {
      * assert.throws(() => model.get.z, /Property does not exist in model schema./)
      * Ref: https://stackoverflow.com/questions/21587122/mocha-chai-expect-to-throw-not-catching-thrown-errors
      */
-    it('should throw an Error when user submits invalid iteration exponent', () => {
-      assert.throws(() => slip39.fromArray(MS, {
-        iterationExponent: -1
-      }), Error);
-      assert.throws(() => slip39.fromArray(MS, {
-        iterationExponent: 33
-      }), Error);
+    it('should throw an Error when user submits invalid iteration exponent', async () => {
+      assert.rejects(async () => {
+        await slip39.fromArray(MS, {
+          iterationExponent: -1
+        })
+      }, Error);
+      assert.rejects(async () => {
+        await slip39.fromArray(MS, {
+          iterationExponent: 33
+        })
+      }, Error);
     });
   });
 });
@@ -132,14 +180,28 @@ describe('Group Sharing Tests', () => {
       [2, 5, 'Group 2'],
       [1, 1, 'Group 3']
     ];
-    const slip = slip39.fromArray(MS, {
-      threshold: 2,
-      groups: groups,
-      title: 'Trezor one SSSS'
-    });
+    let slip;
+    // const slip = slip39.fromArray(MS, {
+    //   threshold: 2,
+    //   groups: groups,
+    //   title: 'Trezor one SSSS'
+    // });
 
-    const group2Mnemonics = slip.fromPath('r/2').mnemonics;
-    const group3Mnemonic = slip.fromPath('r/3').mnemonics[0];
+    let group2Mnemonics = [];
+    // const group2Mnemonics = slip.fromPath('r/2').mnemonics;
+    let group3Mnemonic = [];
+    // const group3Mnemonic = slip.fromPath('r/3').mnemonics[0];
+
+    before(async () => {
+      slip = await slip39.fromArray(MS, {
+        threshold: 2,
+        groups: groups,
+        title: 'Trezor one SSSS'
+      });
+
+      group2Mnemonics = slip.fromPath('r/2').mnemonics;
+      group3Mnemonic = slip.fromPath('r/3').mnemonics[0];
+    });
 
     it('Should include overall split title', () => {
       assert.equal(slip.fromPath('r').description, 'Trezor one SSSS');
@@ -150,12 +212,12 @@ describe('Group Sharing Tests', () => {
       assert.equal(slip.fromPath('r/2').description, 'Group 2');
       assert.equal(slip.fromPath('r/3').description, 'Group 3');
     });
-    it('Should return the valid master secret when it tested with minimal sets of mnemonics.', () => {
+    it('Should return the valid master secret when it tested with minimal sets of mnemonics.', async () => {
       const mnemonics = group2Mnemonics.filter((_, index) => {
         return index === 0 || index === 2;
       }).concat(group3Mnemonic);
 
-      assert(MS.slip39DecodeHex() === slip39.recoverSecret(mnemonics).slip39DecodeHex());
+      assert(MS.slip39DecodeHex() === (await slip39.recoverSecret(mnemonics)).slip39DecodeHex());
     });
     it('TODO: Should NOT return the valid master secret when one complete group and one incomplete group out of two groups required', () => {
       assert(true);
@@ -179,12 +241,12 @@ describe('Original test vectors Tests', () => {
     let mnemonics = item[1];
     let masterSecret = Buffer.from(item[2], 'hex');
 
-    it(description, () => {
+    it(description, async () => {
       if (masterSecret.length !== 0) {
-        let ms = slip39.recoverSecret(mnemonics, PASSPHRASE);
+        let ms = await slip39.recoverSecret(mnemonics, PASSPHRASE);
         assert(masterSecret.every((v, i) => v === ms[i]));
       } else {
-        assert.throws(() => slip39.recoverSecret(mnemonics, PASSPHRASE), Error);
+        assert.rejects(async () => await slip39.recoverSecret(mnemonics, PASSPHRASE), Error);
       }
     });
   });
@@ -228,9 +290,9 @@ describe('Invalid Shares', () => {
     let groups = item[2];
     let secret = item[3];
 
-    it(description, () => {
-      assert.throws(() =>
-        slip39.fromArray(secret, {
+    it(description, async () => {
+      assert.rejects(async () =>
+        await slip39.fromArray(secret, {
           threshold: threshold,
           groups: groups
         }), Error);
@@ -238,10 +300,24 @@ describe('Invalid Shares', () => {
   });
 });
 
-describe('Mnemonic Validation', () => {
-  describe('Valid Mnemonics', () => {
-    let mnemonics = slip15.fromPath('r/0').mnemonics;
 
+describe('Mnemonic Validation', () => {
+
+  let mnemonics = [];
+
+  before(async () => {
+    slip15 = await slip39.fromArray(MS, {
+      passphrase: PASSPHRASE,
+      threshold: 1,
+      groups: ONE_GROUP
+    });
+
+
+    mnemonics = slip15.fromPath('r/0').mnemonics;
+  });
+
+
+  describe('Valid Mnemonics', () => {
     mnemonics.forEach((mnemonic, index) => {
       it(`Mnemonic at index ${index} should be valid`, () => {
         const isValid = slip39.validateMnemonic(mnemonic);
@@ -322,11 +398,12 @@ describe('Mnemonic Validation', () => {
   });
 });
 
+
 function itTestArray(t, g, gs) {
   it(
     `recover master secret for ${t} shares (threshold=${t}) of ${g} '[1, 1,]' groups",`,
-    () => {
-      let slip = slip39.fromArray(MS, {
+    async () => {
+      let slip = await slip39.fromArray(MS, {
         groups: gs.slice(0, g),
         passphrase: PASSPHRASE,
         threshold: t
@@ -335,7 +412,7 @@ function itTestArray(t, g, gs) {
       let mnemonics = slip.fromPath('r').mnemonics.slice(0, t);
 
       let recoveredSecret =
-        slip39.recoverSecret(mnemonics, PASSPHRASE);
+        await slip39.recoverSecret(mnemonics, PASSPHRASE);
 
       assert(MASTERSECRET === String.fromCharCode(...recoveredSecret));
     });
