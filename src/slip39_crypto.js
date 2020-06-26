@@ -63,7 +63,7 @@ if (crypto_web) {
     return derived;
   }
 
-  var createDigest = function (randomData, sharedSecret) {
+  var createDigest = async function (randomData, sharedSecret) {
     const key = Buffer.from(randomData);
     const data = Buffer.from(sharedSecret);
 

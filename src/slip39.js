@@ -87,7 +87,7 @@ class Slip39 {
     const encryptedMasterSecret = await slipHelper.crypt(
       masterSecret, passphrase, iterationExponent, slip.identifier);
 
-    const root = slip.buildRecursive(
+    const root = await slip.buildRecursive(
       new Slip39Node(0, title),
       groups,
       encryptedMasterSecret,
@@ -98,7 +98,7 @@ class Slip39 {
     return slip;
   }
 
-  buildRecursive(currentNode, nodes, secret, threshold, index) {
+  async buildRecursive(currentNode, nodes, secret, threshold, index) {
     // It means it's a leaf.
     if (nodes.length === 0) {
       const mnemonic = slipHelper.encodeMnemonic(this.identifier, this.iterationExponent, index,
@@ -108,11 +108,11 @@ class Slip39 {
       return currentNode;
     }
 
-    const secretShares = slipHelper.splitSecret(threshold, nodes.length, secret);
+    const secretShares = await slipHelper.splitSecret(threshold, nodes.length, secret);
     let children = [];
     let idx = 0;
 
-    nodes.forEach((item) => {
+    for (const item of nodes) {
       // n=threshold
       const n = item[0];
       // m=members
@@ -124,7 +124,7 @@ class Slip39 {
       const members = Array().slip39Generate(m, () => [n, 0, d]);
 
       const node = new Slip39Node(idx, d);
-      const branch = this.buildRecursive(
+      const branch = await this.buildRecursive(
         node,
         members,
         secretShares[idx],
@@ -133,7 +133,7 @@ class Slip39 {
 
       children = children.concat(branch);
       idx = idx + 1;
-    });
+    };
     currentNode.children = children;
     return currentNode;
   }

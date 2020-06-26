@@ -165,7 +165,8 @@ async function roundFunction(round, passphrase, exp, salt, secret) {
   const count = (ITERATION_COUNT << exp) / ROUND_COUNT;
 
   const key = await crypto.pbkdf2Sync(Buffer.from(roundedPhrase), Buffer.from(saltedSecret), count, secret.length, 'sha256');
-  return Array.prototype.slice.call(key, 0);
+  const result = Array.prototype.slice.call(key, 0);
+  return result;
 }
 
 async function crypt(masterSecret, passphrase, iterationExponent,
@@ -196,7 +197,7 @@ async function crypt(masterSecret, passphrase, iterationExponent,
   return IR.concat(IL);
 }
 
-function splitSecret(threshold, shareCount, sharedSecret) {
+async function splitSecret(threshold, shareCount, sharedSecret) {
   if (threshold <= 0) {
     throw Error(`The requested threshold (${threshold}) must be a positive integer.`);
   }
@@ -216,7 +217,7 @@ function splitSecret(threshold, shareCount, sharedSecret) {
   const randomShareCount = threshold - 2;
 
   const randomPart = randomBytes(sharedSecret.length - DIGEST_LENGTH);
-  const digest = crypto.createDigest(randomPart, sharedSecret);
+  const digest = await crypto.createDigest(randomPart, sharedSecret);
 
   let baseShares = new Map();
   let shares = [];
@@ -404,7 +405,7 @@ function mnemonicToIndices(mnemonic) {
   return result;
 }
 
-function recoverSecret(threshold, shares) {
+async function recoverSecret(threshold, shares) {
   // If the threshold is 1, then the digest of the shared secret is not used.
   if (threshold === 1) {
     return shares.values().next().value;
@@ -415,7 +416,7 @@ function recoverSecret(threshold, shares) {
   const digest = digestShare.slice(0, DIGEST_LENGTH);
   const randomPart = digestShare.slice(DIGEST_LENGTH);
 
-  const recoveredDigest = crypto.createDigest(
+  const recoveredDigest = await crypto.createDigest(
     randomPart, sharedSecret);
   if (!listsAreEqual(digest, recoveredDigest)) {
     throw new Error('Invalid digest of the shared secret.');
@@ -448,7 +449,7 @@ async function combineMnemonics(mnemonics, passphrase = '') {
   }
 
   let allShares = new Map();
-  groups.forEach((members, groupIndex) => {
+  for (const [groupIndex, members] of groups.entries()) {
     const threshold = members.keys().next().value;
     const shares = members.values().next().value;
     if (shares.size !== threshold) {
@@ -462,11 +463,11 @@ async function combineMnemonics(mnemonics, passphrase = '') {
       throw new Error(`Wrong number of mnemonics. Expected ${threshold} mnemonics starting with "${mnemonicFromIndices(prefix)}", \n but ${shares.size} were provided.`);
     }
 
-    const recovered = recoverSecret(threshold, shares);
+    const recovered = await recoverSecret(threshold, shares);
     allShares.set(groupIndex, recovered);
-  });
+  };
 
-  const ems = recoverSecret(groupThreshold, allShares);
+  const ems = await recoverSecret(groupThreshold, allShares);
   const id = intToIndices(BigInt(identifier), ITERATION_EXP_WORDS_LENGTH, 8);
   const ms = await crypt(ems, passphrase, iterationExponent, id, false);
 
