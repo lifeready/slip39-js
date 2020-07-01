@@ -138,13 +138,15 @@ describe('Basic Tests', () => {
      * assert.throws(() => model.get.z, /Property does not exist in model schema./)
      * Ref: https://stackoverflow.com/questions/21587122/mocha-chai-expect-to-throw-not-catching-thrown-errors
      */
-    it('should throw an Error when user submits invalid iteration exponent', async () => {
-      assert.rejects(async () => {
+    it('should throw an Error when user submits invalid iteration exponent (too low)', async () => {
+      await assert.rejects(async () => {
         await slip39.fromArray(MS, {
           iterationExponent: -1
         })
       }, Error);
-      assert.rejects(async () => {
+    });
+    it('should throw an Error when user submits invalid iteration exponent (too high)', async () => {
+      await assert.rejects(async () => {
         await slip39.fromArray(MS, {
           iterationExponent: 33
         })
@@ -220,7 +222,7 @@ describe('Original test vectors Tests', () => {
         let ms = await slip39.recoverSecret(mnemonics, PASSPHRASE);
         assert(masterSecret.every((v, i) => v === ms[i]));
       } else {
-        assert.rejects(async () => await slip39.recoverSecret(mnemonics, PASSPHRASE), Error);
+        await assert.rejects(async () => await slip39.recoverSecret(mnemonics, PASSPHRASE), Error);
       }
     });
   });
@@ -265,7 +267,7 @@ describe('Invalid Shares', () => {
     let secret = item[3];
 
     it(description, async () => {
-      assert.rejects(async () =>
+      await assert.rejects(async () =>
         await slip39.fromArray(secret, {
           threshold: threshold,
           groups: groups
