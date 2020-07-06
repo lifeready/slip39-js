@@ -2226,6 +2226,8 @@ const WORD_LIST_MAP = WORD_LIST.reduce((obj, val, idx) => {
 
 exports = module.exports = {
   MIN_ENTROPY_BITS,
+  WORD_LIST,
+  WORD_LIST_MAP,
   generateIdentifier,
   encodeMnemonic,
   validateMnemonic,
@@ -2235,4 +2237,6 @@ exports = module.exports = {
   bitsToBytes,
   slip39EncodeHex,
   slip39DecodeHex,
+  mnemonicFromIndices,
+  mnemonicToIndices,
 };
