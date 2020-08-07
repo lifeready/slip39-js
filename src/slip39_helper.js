@@ -2230,6 +2230,7 @@ exports = module.exports = {
   WORD_LIST_MAP,
   generateIdentifier,
   encodeMnemonic,
+  decodeMnemonic,
   validateMnemonic,
   splitSecret,
   combineMnemonics,
